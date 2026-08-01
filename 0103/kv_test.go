@@ -54,6 +54,7 @@ func TestEntryEncode(t *testing.T) {
 	ent := Entry{key: []byte("k1"), val: []byte("xxx")}
 	data := []byte{2, 0, 0, 0, 3, 0, 0, 0, 0, 'k', '1', 'x', 'x', 'x'}
 
+	
 	assert.Equal(t, data, ent.Encode())
 
 	decoded := Entry{}

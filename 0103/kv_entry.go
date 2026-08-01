@@ -11,6 +11,7 @@ type Entry struct {
 	deleted bool
 }
 
+
 func (ent *Entry) Encode() []byte {
 	data := make([]byte, 4+4+1+len(ent.key)+len(ent.val))
 	binary.LittleEndian.PutUint32(data[0:4], uint32(len(ent.key)))

@@ -21,8 +21,12 @@ func (kv *KV) Open() error {
 		if eof {
 			break
 		}
-		
-		kv.mem[string(ent.key)] = ent.val
+
+		if ent.deleted {
+			delete(kv.mem, string(ent.key))
+		} else {
+			kv.mem[string(ent.key)] = ent.val
+		}
 	}
 
 	return nil
@@ -35,9 +39,37 @@ func (kv *KV) Get(key []byte) (val []byte, ok bool, err error) {
 	return
 }
 
-func (kv *KV) Set(key []byte, val []byte) (updated bool, err error)
+func (kv *KV) Set(key []byte, val []byte) (updated bool, err error) {	
+	ent := &Entry{key: key, val: val,}
+	err = kv.log.Write(ent)
+	if err != nil {
+		return updated, err
+	}
+	kv.mem[string(key)] = val
 
-func (kv *KV) Del(key []byte) (deleted bool, err error)
+	updated = true
+	return updated, err
+}
+
+func (kv *KV) Del(key []byte) (deleted bool, err error) {
+	_, ok, err := kv.Get(key)
+	if err != nil {
+		return deleted, err
+	}
+	if !ok {
+		return deleted, err
+	}
+	
+	ent := &Entry{key: key, deleted: true}
+	err = kv.log.Write(ent)
+	if err != nil {
+		return deleted, err
+	}
+	delete(kv.mem, string(key))
+	deleted = true
+	
+	return deleted, nil
+}
 
 // QzBQWVJJOUhU https://trialofcode.org/
 
