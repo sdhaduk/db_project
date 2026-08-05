@@ -1,5 +1,7 @@
 package db0203
 
+import "fmt"
+
 type KV struct {
 	log Log
 	mem map[string][]byte
@@ -44,7 +46,44 @@ const (
 	ModeUpdate UpdateMode = 2 // update existing
 )
 
-func (kv *KV) SetEx(key []byte, val []byte, mode UpdateMode) (updated bool, err error)
+func (kv *KV) SetEx(key []byte, val []byte, mode UpdateMode) (updated bool, err error) {
+	_, ok := kv.mem[string(key)]
+
+	switch mode {
+	case ModeUpsert:
+		err = kv.log.Write(&Entry{key: key, val: val})
+		if err != nil {
+			return false, nil
+		}
+		kv.mem[string(key)] = val
+		return true, nil
+
+	case ModeInsert:
+		if ok {
+			return false, nil
+		}
+		err = kv.log.Write(&Entry{key: key, val: val})
+		if err != nil {
+			return false, nil
+		}
+		kv.mem[string(key)] = val
+		return true, nil
+	
+	case ModeUpdate:
+		if !ok {
+			return false, nil
+		}
+		err = kv.log.Write(&Entry{key: key, val: val})
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	
+	default:
+		return false, fmt.Errorf("invalid value for mode")
+	}
+
+}
 
 func (kv *KV) Set(key []byte, val []byte) (updated bool, err error) {
 	return kv.SetEx(key, val, ModeUpsert)
